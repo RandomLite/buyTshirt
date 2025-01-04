@@ -21,9 +21,9 @@ export const getProducts = () => {
           type: GET_PRODUCTS,
           payload: response.data
         });
-           // fetch(`${BASE_URL}`)
-           // .then(response => response.json())
-           // .then((products) => dipatch(success(products)))
+           fetch(`${BASE_URL}`)
+           .then(response => response.json())
+           .then((products) => dipatch(success(products)))
       } else {
         console.log('Unable to fetch data from the API BASE URL!');
       }

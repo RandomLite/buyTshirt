@@ -1,95 +1,74 @@
-import React, { useState, useEffect,useMemo } from "react";
-import { StyleSheet, View,Text } from "react-native";
-// import Category from "../../components/Category";
+import React, { useState, useMemo, useEffect } from "react";
+import { StyleSheet, View, Text, ActivityIndicator } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-
 import TshirtList from "../../components/List";
 import { SearchBar } from "react-native-elements";
-import {  getProducts } from "../../redux/actions/productsActions";
+import { getProducts } from "../../redux/actions/productsActions";
 import { useFocusEffect } from '@react-navigation/native';
+import { Platform } from 'react-native';
 
 const HomeScreen = () => {
-  
-// Thirrja e te dhenave
-const dispatch = useDispatch();
-const {products}  = useSelector((state) => state.productsReducer);
+  const dispatch = useDispatch();
+  const { products, loading } = useSelector((state) => state.productsReducer);
 
-
-  const useFetching = (getProducts) => {
-    useFocusEffect(
-      React.useCallback(() => {
+  // Fetch products on screen focus
+  useFocusEffect(
+    React.useCallback(() => {
       dispatch(getProducts());
-        }, [dispatch,getProducts]
-      ))
-  }
-  useFetching(getProducts);
+    }, [dispatch])
+  );
 
-  
-
-  // Kerkimi i te dhenave
-
+  // Search handling
   const [search, setSearch] = useState('');
-  const [masterDataSource] = useState(products);
-  const [filteredDataSource, setFilteredDataSource] = useState(masterDataSource);
-  
+  const masterDataSource = useMemo(() => products, [products]);
+  const [filteredDataSource, setFilteredDataSource] = useState([]);
+
+  // Update filtered data whenever products are fetched
+  useEffect(() => {
+    if (products && products.length > 0) {
+      setFilteredDataSource(products);
+    }
+  }, [products]);
 
   const searchFilterFunction = (text) => {
-    // Check if searched text is not blank
-    if (text) {
-      // Inserted text is not blank
-      // Filter the masterDataSource
-      // Update FilteredDataSource
-      const newData = masterDataSource.filter(function (item) {
-        const itemData = item.title
-          ? item.title.toUpperCase()
-          : ''.toUpperCase();
-        const textData = text.toUpperCase();
-        return itemData.indexOf(textData) > -1;
-      });
-      setFilteredDataSource(newData);
-      setSearch(text);
-      
+    const formattedText = text.toUpperCase();
+    if (formattedText.length > 0) {
+      const filtered = masterDataSource.filter((item) =>
+        item.title ? item.title.toUpperCase().includes(formattedText) : false
+      );
+      setFilteredDataSource(filtered);
     } else {
-      // Inserted text is blank
-      // Update FilteredDataSource with masterDataSource
       setFilteredDataSource(masterDataSource);
-      setSearch(text);
     }
+    setSearch(text);
   };
 
- 
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
-    <View
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        paddingHorizontal: 10,
-      }}
-    >
+    <View style={styles.container}>
       <View style={styles.searchBar}>
         <SearchBar
-        containerStyle={{
-          height: 50,
-          backgroundColor: "#fff",
-          borderRadius: 25,
-          elevation: 3,
-          alignItems: "center",
-        }}
-        inputStyle={{ backgroundColor: "#fff", height: 40, color: "#2d2d2d"}}
-        inputContainerStyle={{ backgroundColor: "#fff", height: 40, borderRadius:25}}
-        showLoading={false}
-        platform={Platform.OS}
-        clearIcon={true}
-        placeholder="Search T-shirt"
-        value={search}
-        onChangeText={(text) => searchFilterFunction(text)}
-        onClear={(text) => searchFilterFunction('')}
-        cancelButtonTitle="Cancel"
-      />
+          containerStyle={styles.searchBarContainer}
+          inputStyle={styles.searchInput}
+          inputContainerStyle={styles.searchInputContainer}
+          showLoading={false}
+          platform={Platform.OS}
+          clearIcon={true}
+          placeholder="Search T-shirt"
+          value={search}
+          onChangeText={searchFilterFunction}
+          onClear={() => searchFilterFunction('')}
+          cancelButtonTitle="Cancel"
+        />
       </View>
-        {/* <Category/>  */}
-        <TshirtList products={filteredDataSource}/>
+      <TshirtList products={filteredDataSource} />
     </View>
   );
 };
@@ -97,7 +76,35 @@ const {products}  = useSelector((state) => state.productsReducer);
 export default HomeScreen;
 
 const styles = StyleSheet.create({
+  container: {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    paddingHorizontal: 10,
+  },
   searchBar: {
     top: 5,
+  },
+  searchBarContainer: {
+    height: 50,
+    backgroundColor: "#fff",
+    borderRadius: 25,
+    elevation: 3,
+    alignItems: "center",
+  },
+  searchInput: {
+    backgroundColor: "#fff",
+    height: 40,
+    color: "#2d2d2d",
+  },
+  searchInputContainer: {
+    backgroundColor: "#fff",
+    height: 40,
+    borderRadius: 25,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
